@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클립보드 최종 안정화</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* CSS 스타일 (UI 수정사항 유지) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #eef2ff;
+        }
+        input:not([type="file"]), textarea, select { 
+            padding: 0.5rem 0.75rem !important;
+            width: 100% !important; 
+            box-sizing: border-box !important;
+        }
+        input:focus, textarea:focus, select:focus { 
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4);
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* 기타 스타일 유지 */
+        .report-section-content { font-size: 10px; line-height: 1.3; }
+        .report-section h2 { font-size: 15px !important; font-weight: bold; }
+        .report-table { border-collapse: collapse; width: 100%; }
+        .report-table th, .report-table td { border: 1px solid #ccc; padding: 3px 6px; vertical-align: middle; }
+        .report-table th { background-color: #f7f7f7; font-weight: bold; width: 15%; text-align: center; }
+        .report-section { margin-bottom: 0px; padding-bottom: 0px; }
+        
+        /* 모바일 UI 개선 - 버튼 패딩 조정 */
+        @media (max-width: 640px) {
+            #report-controls button {
+                padding-top: 0.75rem !important;
+                padding-bottom: 0.75rem !important;
+            }
+            .p-4.sm\:p-8.min-h-screen { padding: 1rem !important; }
+            .w-full.max-w-4xl { padding: 1rem !important; }
+        }
+
+        /* 버튼 폭 크기 조정 (UI 수정사항 유지) */
+        .large-button {
+            width: 100%; 
+            max-width: 18rem; 
+            margin: 0 auto; 
+        }
+        .copyable-output {
+            /* 긁어서 복사하기 편하도록 디자인 */
+            width: 100%;
+            min-height: 150px;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            white-space: pre-wrap; /* 줄 바꿈 유지 */
+            font-family: monospace;
+            font-size: 14px;
+            cursor: text;
+            user-select: text; /* 텍스트 선택 가능하도록 보장 */
+        }
+        
+        /* PDF 버튼은 숨겨짐 */
+        #pdf-control-container {
+            display: none !important; 
+        }
+        
+    </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen flex items-start justify-center">
+    <div id="app" class="w-full max-w-4xl mx-auto bg-white shadow-2xl rounded-2xl p-8 md:p-12 border border-gray-100 mt-4 mb-4">
+
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-2">
+            <i class="fas fa-hard-hat text-indigo-500 mr-3"></i> 건설 현장 사고조사 초동보고서
+        </h1>
+        <p class="text-gray-500 mb-8 border-b pb-4 hidden">현장 및 사고 관련 정보를 정확하게 입력하고 전문적인 보고서를 생성하세요.</p>
+
+        <div id="report-form" class="space-y-8">
+            
+            <div class="space-y-4 p-6 bg-gray-50 rounded-xl shadow-inner border border-gray-200">
+                <h2 class="text-xl font-bold text-indigo-700 mb-3 border-b-2 border-indigo-200 pb-2">
+                    <i class="fas fa-triangle-exclamation text-indigo-400 mr-2"></i> 사고 발생 및 인적 피해 정보
+                </h2>
+                <div>
+                    <label for="accidentDatetime" class="block text-sm font-semibold text-gray-700 mb-1">
+                        사고 일시 (년/월/일 시:분) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="datetime-local" id="accidentDatetime" name="accidentDatetime" required 
+                                     class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="fatalities" class="block text-sm font-semibold text-gray-700 mb-1">사망자수 <span class="text-red-500">*</span></label>
+                        <select id="fatalities" name="fatalities" required
+                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                            <option value="0">0명</option>
+                            <option value="1">1명</option>
+                            <option value="2">2명</option>
+                            <option value="3">3명</option>
+                            <option value="4">4명</option>
+                            <option value="5">5명</option>
+                            <option value="6">6명</option>
+                            <option value="7">7명</option>
+                            <option value="8">8명</option>
+                            <option value="9">9명</option>
+                            <option value="10">10명 이상</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="injuries" class="block text-sm font-semibold text-gray-700 mb-1">부상자수 <span class="text-red-500">*</span></label>
+                        <select id="injuries" name="injuries" required
+                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                            <option value="0">0명</option>
+                            <option value="1">1명</option>
+                            <option value="2">2명</option>
+                            <option value="3">3명</option>
+                            <option value="4">4명</option>
+                            <option value="5">5명</option>
+                            <option value="6">6명</option>
+                            <option value="7">7명</option>
+                            <option value="8">8명</option>
+                            <option value="9">9명</option>
+                            <option value="10">10명 이상</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="summary" class="block text-sm font-semibold text-gray-700 mb-1">
+                        사고 내용 (발생 경위) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex space-x-2">
+                        <textarea id="summary" name="summary" rows="4" required 
+                                     class="block w-full rounded-lg border-gray-300 shadow-sm resize-y transition duration-150"></textarea>
+                        
+                        <button type="button" id="voiceInputBtn" onclick="toggleVoiceInput('summary')" 
+                                class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg shadow-md transition duration-150"
+                                style="width: 50px; height: 50px; flex-shrink: 0; align-self: start;">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label for="actionTaken" class="block text-sm font-semibold text-gray-700 mb-1">
+                        초동 조치사항 <span class="text-red-500">*</span>
+                    </label>
+                     <div class="flex space-x-2">
+                        <textarea id="actionTaken" name="actionTaken" rows="3" required 
+                                     class="block w-full rounded-lg border-gray-300 shadow-sm resize-y transition duration-150"></textarea>
+                        
+                        <button type="button" onclick="toggleVoiceInput('actionTaken')" 
+                                class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg shadow-md transition duration-150"
+                                style="width: 50px; height: 50px; flex-shrink: 0; align-self: start;">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4 p-6 bg-gray-50 rounded-xl shadow-inner border border-gray-200">
+                <h2 class="text-xl font-bold text-indigo-700 mb-3 border-b-2 border-indigo-200 pb-2">
+                    <i class="fas fa-building text-indigo-400 mr-2"></i> 사업/현장 기본 정보
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="companyName" class="block text-sm font-semibold text-gray-700 mb-1">
+                            회사명 <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="companyName" name="companyName" required 
+                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                    </div>
+                    <div>
+                        <label for="siteName" class="block text-sm font-semibold text-gray-700 mb-1">
+                            현장명 <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="siteName" name="siteName" required 
+                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label for="projectScale" class="block text-sm font-semibold text-gray-700 mb-1">공사규모</label>
+                        <input type="text" id="projectScale" class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                    </div>
+                    <div>
+                        <label for="client" class="block text-sm font-semibold text-gray-700 mb-1">발주자</label>
+                        <input type="text" id="client" class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                    </div>
+                    <div>
+                        <label for="cost" class="block text-sm font-semibold text-gray-700 mb-1">공사금액 (단위: 원)</label>
+                        <input type="text" id="cost" class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                    </div>
+                    <div>
+                        <label for="progressRate" class="block text-sm font-semibold text-gray-700 mb-1">공정율 (%)</label>
+                        <input type="text" id="progressRate" class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="startDate" class="block text-sm font-semibold text-gray-700 mb-1">
+                            착공일 (예: 240101 또는 2024.01.01)
+                        </label>
+                        <input type="text" id="startDate" 
+                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                    </div>
+                    <div>
+                        <label for="completionDate" class="block text-sm font-semibold text-gray-700 mb-1">
+                            준공일 (예: 251231 또는 2025.12.31)
+                        </label>
+                        <input type="text" id="completionDate"
+                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="space-y-4 p-6 bg-gray-50 rounded-xl shadow-inner border border-gray-200">
+                <h2 class="text-xl font-bold text-indigo-700 mb-3 border-b-2 border-indigo-200 pb-2">
+                    <i class="fas fa-user-edit text-indigo-400 mr-2"></i> 보고기관 및 사진 첨부
+                </h2>
+                <label for="reporter" class="block text-sm font-semibold text-gray-700 mb-1">
+                    보고기관 <span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="reporter" name="reporter" required 
+                    class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                
+                <label for="accidentPhoto" class="block text-sm font-semibold text-gray-700 mb-1 pt-4">
+                    <i class="fas fa-camera text-indigo-400 mr-1"></i> 사고 현장 사진 (최대 8개까지 첨부 가능)
+                </label>
+                <input type="file" id="accidentPhoto" accept="image/*" multiple
+                    class="block w-full text-sm text-gray-700 file:mr-4 file:py-3 file:px-4 file:rounded-full file:border-0 file:text-lg file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
+                <button type="button" onclick="generateReportAndShowPreview()"
+                    class="large-button bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:scale-[1.01] flex items-center justify-center text-lg">
+                    <i class="fas fa-eye mr-3"></i> 보고서 내용 미리보기
+                </button>
+                
+                <div id="pdf-control-container" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div id="report-output" class="mt-12 p-8 bg-white rounded-2xl shadow-xl border border-indigo-100 hidden">
+            <h3 class="text-xl font-bold text-indigo-700 mb-3">
+                <i class="fas fa-file-lines mr-2"></i> 복사할 내용 (수동 선택)
+            </h3>
+            <div id="preview-text" class="copyable-output"></div>
+            <p id="copy-message" class="mt-4 text-base text-green-600 hidden font-medium flex items-center"></p>
+        </div>
+
+        <div id="error-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-2xl p-6 w-11/12 max-w-sm">
+                <h3 class="text-xl font-bold text-red-600 mb-4 flex items-center">
+                    <i class="fas fa-exclamation-circle mr-2"></i> 입력 오류
+                </h3>
+                <p id="error-message" class="text-gray-700 mb-6"></p>
+                <button onclick="closeModal()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 text-lg">
+                    확인
+                </button>
+            </div>
+        </div>
+        
+        <div id="loading-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-2xl p-8 flex flex-col items-center">
+                <div class="loader mb-4"></div>
+                <p class="text-gray-700 font-semibold" id="loading-text">음성 입력을 준비 중입니다...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        
+        const MAX_PHOTOS = 8; 
+        // Web Speech API 관련 변수 선언 (브라우저 호환성 고려)
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        let activeInputId = null;
+
+        // 음성 인식을 시작/종료하는 토글 함수
+        function toggleVoiceInput(inputId) {
+            const inputElement = document.getElementById(inputId);
+            activeInputId = inputId;
+
+            // 1. Web Speech API 지원 여부 확인
+            if (!SpeechRecognition) {
+                openModal('❌ 오류: 이 브라우저는 음성 인식 기능을 지원하지 않습니다. (Chrome, Edge 등에서 사용해 주세요.)');
+                return;
+            }
+
+            // 2. 이미 인식 중인지 확인하고 종료
+            if (recognition && recognition.active) {
+                recognition.stop();
+                return; // stop 이벤트 핸들러에서 나머지 처리
+            }
+            
+            // 3. 인식 객체 초기화 및 설정
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ko-KR'; // 한국어 설정
+            recognition.interimResults = true; // 중간 결과 표시
+            recognition.maxAlternatives = 1;
+
+            // 로딩 모달 표시 및 텍스트 변경
+            document.getElementById('loading-text').innerText = '말씀하세요... (음성 입력 중)';
+            document.getElementById('loading-modal').classList.remove('hidden');
+
+            // 4. 이벤트 핸들러 설정
+            
+            // 음성 인식 결과가 나왔을 때
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                // 실시간으로 입력 필드에 중간 텍스트 표시 (선택 사항)
+                inputElement.value += interimTranscript; 
+            };
+
+            // 음성 인식이 끝났을 때
+            recognition.onend = () => {
+                document.getElementById('loading-modal').classList.add('hidden');
+                // 최종 텍스트만 처리하거나, 중간에 추가된 텍스트를 정리할 수 있음
+                // 여기서는 최종 텍스트를 inputElement.value에 추가
+                
+                // 재시작 (사용자가 말을 멈춰도 계속 듣고 싶을 때)
+                // recognition.start(); 
+            };
+            
+            // 오류가 발생했을 때
+            recognition.onerror = (event) => {
+                document.getElementById('loading-modal').classList.add('hidden');
+                openModal(`음성 인식 오류: ${event.error}. 마이크 권한을 확인해주세요.`);
+            };
+
+            // 5. 인식 시작
+            recognition.start();
+        }
+
+
+        // [핵심 함수] 보고서 생성 후 미리보기 영역에 텍스트를 출력하는 함수
+        function generateReportAndShowPreview() {
+            // 필수 필드 유효성 검사
+            const formDiv = document.getElementById('report-form');
+            const requiredInputs = formDiv.querySelectorAll('[required]');
+
+            for (const input of requiredInputs) {
+                if (!input.value.trim()) {
+                    openModal('필수 입력 항목(*표시)을 모두 채워주세요.');
+                    input.focus();
+                    return; 
+                }
+            }
+
+            // 데이터 수집 및 JS 유효성 검사/포맷팅
+            const data = collectFormData(); 
+            
+            if (data) {
+                // 텍스트 생성 및 출력 (클립보드 복사 영역)
+                try {
+                    const formattedText = createFormattedText(data);
+                    
+                    document.getElementById('preview-text').innerText = formattedText;
+                    document.getElementById('report-output').classList.remove('hidden');
+                    document.getElementById('report-output').scrollIntoView({ behavior: 'smooth' });
+                    
+                } catch (e) {
+                    console.error("Error creating or inserting text:", e);
+                    openModal('보고서 내용을 생성하는 중 오류가 발생했습니다. (콘솔 확인)');
+                }
+            }
+        }
+        
+        // 에러 모달 열기 함수
+        function openModal(message) {
+            document.getElementById('error-message').innerText = message;
+            document.getElementById('error-modal').classList.remove('hidden');
+        }
+
+        // 에러 모달 닫기 함수
+        function closeModal() {
+            document.getElementById('error-modal').classList.add('hidden');
+        }
+        
+        // 텍스트 포맷 생성 함수 (기존 로직 유지)
+        function createFormattedText(data) {
+            let formattedText = `[사고조사 초동보고서]\n`;
+            formattedText += `보고일: ${data.formattedReportDate}\n`;
+            formattedText += `==============================\n\n`;
+
+            formattedText += `1. 사고 개요\n`;
+            formattedText += `사고 일시: ${data.formattedAccidentDate}\n`;
+            formattedText += `인적 피해: 사망 ${data.fatalities}명, 부상 ${data.injuries}명 (총 ${data.totalInjuries}명)\n`;
+            formattedText += `사고 내용 (발생 경위): \n${data.summary}\n\n`;
+            
+            formattedText += `2. 사업장 현황\n`;
+            
+            formattedText += `업체명: ${data.companyName}\n`;
+            formattedText += `현장명: ${data.siteName}\n`;
+            
+            if (data.formattedConstructionPeriod) {
+                formattedText += `공사기간: ${data.formattedConstructionPeriod}\n`;
+            }
+            if (data.progressRate && data.progressRate !== '') {
+                formattedText += `공정율: ${data.progressRate} %\n`;
+            }
+            if (data.projectScale && data.projectScale !== '') {
+                formattedText += `공사규모: ${data.projectScale}\n`;
+            }
+            if (data.cost && data.cost !== '') { 
+                formattedText += `공사금액: ${data.cost} 원\n`;
+            }
+            if (data.client && data.client !== '') {
+                formattedText += `발주자: ${data.client}\n`;
+            }
+            formattedText += `\n`; 
+
+            formattedText += `3. 초동 조치사항 및 보고기관\n`;
+            formattedText += `조치 사항: \n${data.actionTaken}\n`;
+            formattedText += `보고기관: ${data.reporter}\n`; 
+            formattedText += `첨부 사진: ${data.photoCount}장\n`; 
+            formattedText += `==============================\n`;
+            
+            return formattedText;
+        }
+
+        // 폼 데이터 수집 함수 (기존 로직 유지)
+        function collectFormData() {
+            const getVal = (id) => {
+                const el = document.getElementById(id);
+                return el ? el.value.trim() : '';
+            };
+
+            const companyName = getVal('companyName');
+            const siteName = getVal('siteName');
+            const projectScale = getVal('projectScale');
+            const client = getVal('client');
+            const cost = getVal('cost').replace(/\B(?=(\d{3})+(?!\d))/g, ","); 
+            const progressRate = getVal('progressRate');
+            let startDate = getVal('startDate'); 
+            let completionDate = getVal('completionDate'); 
+            const accidentDatetimeEl = document.getElementById('accidentDatetime');
+            const accidentDatetime = accidentDatetimeEl ? accidentDatetimeEl.value : '';
+            const fatalities = getVal('fatalities') || 0; 
+            const injuries = getVal('injuries') || 0;
+            const summary = getVal('summary');
+            const actionTaken = getVal('actionTaken');
+            const reporter = getVal('reporter');
+            
+            const accidentPhotoEl = document.getElementById('accidentPhoto');
+            const photoCount = accidentPhotoEl ? accidentPhotoEl.files.length : 0;
+
+
+            // --- 6자리 날짜 포맷팅 및 유효성 검사 ---
+            const formatAndValidateDate = (dateString, fieldName) => {
+                if (!dateString) return ''; 
+
+                if (/^\d{4}\.\d{2}\.\d{2}$/.test(dateString)) {
+                    return dateString;
+                }
+                
+                if (/^\d{6}$/.test(dateString)) {
+                    const year = '20' + dateString.substring(0, 2);
+                    const month = dateString.substring(2, 4);
+                    const day = dateString.substring(4, 6);
+                    return `${year}.${month}.${day}`;
+                }
+
+                openModal(`${fieldName}은 6자리(예: 240101) 또는 yyyy.mm.dd 형식(예: 2024.01.01)으로 입력해주세요.`);
+                return null;
+            };
+
+            startDate = formatAndValidateDate(startDate, '착공일');
+            if (startDate === null) return null;
+            
+            completionDate = formatAndValidateDate(completionDate, '준공일');
+            if (completionDate === null) return null;
+            // ---------------------------------------------------
+
+            const formatDateTime = (datetime) => {
+                if (!datetime) return '-';
+                const d = new Date(datetime);
+                const datePart = d.getFullYear() + '.' + (d.getMonth() + 1).toString().padStart(2, '0') + '.' + d.getDate().toString().padStart(2, '0');
+                const timePart = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+                return `${datePart} ${timePart}`;
+            };
+            
+            const now = new Date();
+            const formattedReportDate = now.getFullYear() + '.' + (now.getMonth() + 1).toString().padStart(2, '0') + '.' + now.getDate().toString().padStart(2, '0') + ' ' + now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+            const periodString = (startDate || completionDate) ? `${startDate} ~ ${completionDate}` : '';
+            const formattedConstructionPeriod = periodString;
+
+            return {
+                companyName,
+                siteName,
+                projectScale: projectScale || '', 
+                client: client || '',
+                cost: cost || '',
+                progressRate: progressRate || '',
+                formattedConstructionPeriod,
+                formattedAccidentDate: formatDateTime(accidentDatetime),
+                fatalities: parseInt(fatalities),
+                injuries: parseInt(injuries),
+                totalInjuries: parseInt(fatalities) + parseInt(injuries),
+                summary,
+                actionTaken,
+                reporter,
+                formattedReportDate: formattedReportDate,
+                photoCount: photoCount
+            };
+        }
+    </script>
+</body>
+</html>
