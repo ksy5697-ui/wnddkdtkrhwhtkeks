@@ -16,6 +16,7 @@
             font-family: 'Inter', sans-serif;
             background-color: #eef2ff;
         }
+        /* 입력 필드 스타일 유지 */
         input:not([type="file"]), textarea, select { 
             padding: 0.5rem 0.75rem !important;
             width: 100% !important; 
@@ -25,6 +26,7 @@
             border-color: #4f46e5;
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4);
         }
+        /* 로딩 스피너 및 기타 스타일 유지 */
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #4f46e5;
@@ -37,47 +39,51 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        /* 기타 스타일 유지 */
-        .report-section-content { font-size: 10px; line-height: 1.3; }
-        .report-section h2 { font-size: 15px !important; font-weight: bold; }
-        .report-table { border-collapse: collapse; width: 100%; }
-        .report-table th, .report-table td { border: 1px solid #ccc; padding: 3px 6px; vertical-align: middle; }
-        .report-table th { background-color: #f7f7f7; font-weight: bold; width: 15%; text-align: center; }
-        .report-section { margin-bottom: 0px; padding-bottom: 0px; }
-        
-        /* 모바일 UI 개선 - 버튼 패딩 조정 */
-        @media (max-width: 640px) {
-            #report-controls button {
-                padding-top: 0.75rem !important;
-                padding-bottom: 0.75rem !important;
-            }
-            .p-4.sm\:p-8.min-h-screen { padding: 1rem !important; }
-            .w-full.max-w-4xl { padding: 1rem !important; }
-        }
-
-        /* 버튼 폭 크기 조정 (UI 수정사항 유지) */
         .large-button {
             width: 100%; 
             max-width: 18rem; 
             margin: 0 auto; 
         }
         .copyable-output {
-            /* 긁어서 복사하기 편하도록 디자인 */
             width: 100%;
             min-height: 150px;
             padding: 1rem;
             border: 1px solid #ddd;
             background-color: #fff;
-            white-space: pre-wrap; /* 줄 바꿈 유지 */
+            white-space: pre-wrap; 
             font-family: monospace;
             font-size: 14px;
             cursor: text;
-            user-select: text; /* 텍스트 선택 가능하도록 보장 */
+            user-select: text; 
         }
-        
-        /* PDF 버튼은 숨겨짐 */
         #pdf-control-container {
             display: none !important; 
+        }
+        /* 마이크 버튼 공통 스타일 */
+        .voice-btn {
+            width: 50px; 
+            height: 50px; 
+            flex-shrink: 0; 
+            align-self: flex-start;
+            margin-top: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* input 옆에 마이크 버튼을 붙이기 위한 컨테이너 */
+        .input-with-voice {
+            display: flex;
+            align-items: flex-start;
+            space-x: 0.5rem; /* Tailwind CSS space-x-2 */
+        }
+        /* input 자체의 높이를 마이크 버튼과 맞추기 위해 약간 조정 */
+        .input-with-voice input[type="text"], .input-with-voice textarea {
+             height: 50px; /* 버튼 높이와 맞춤 (textarea는 rows로 높이 조절) */
+             align-self: center;
+        }
+        .input-with-voice input[type="text"] {
+             height: 40px; /* 기본 input 높이에 맞춤 */
         }
         
     </style>
@@ -139,32 +145,33 @@
                         </select>
                     </div>
                 </div>
+                
                 <div>
                     <label for="summary" class="block text-sm font-semibold text-gray-700 mb-1">
                         사고 내용 (발생 경위) <span class="text-red-500">*</span>
                     </label>
-                    <div class="flex space-x-2">
+                    <div class="input-with-voice space-x-2">
                         <textarea id="summary" name="summary" rows="4" required 
                                      class="block w-full rounded-lg border-gray-300 shadow-sm resize-y transition duration-150"></textarea>
                         
                         <button type="button" id="voiceInputBtn" onclick="toggleVoiceInput('summary')" 
-                                class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg shadow-md transition duration-150"
-                                style="width: 50px; height: 50px; flex-shrink: 0; align-self: start;">
+                                class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg shadow-md transition duration-150 voice-btn">
                             <i class="fas fa-microphone"></i>
                         </button>
                     </div>
                 </div>
+                
                 <div>
-                    <label for="actionTaken" class="block text-sm font-semibold text-gray-700 mb-1">
-                        초동 조치사항 <span class="text-red-500">*</span>
+                    <label for="initialInvestigator" class="block text-sm font-semibold text-gray-700 mb-1">
+                        초동 조사 기관 <span class="text-red-500">*</span>
                     </label>
-                     <div class="flex space-x-2">
-                        <textarea id="actionTaken" name="actionTaken" rows="3" required 
-                                     class="block w-full rounded-lg border-gray-300 shadow-sm resize-y transition duration-150"></textarea>
-                        
-                        <button type="button" onclick="toggleVoiceInput('actionTaken')" 
-                                class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg shadow-md transition duration-150"
-                                style="width: 50px; height: 50px; flex-shrink: 0; align-self: start;">
+                    <div class="input-with-voice space-x-2">
+                         <input type="text" id="initialInvestigator" name="initialInvestigator" required 
+                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150"
+                            placeholder="00지역본부 건설안전부 2명, 00사고조사센터 2명, 노동부 00지청 감독관 2명">
+                         
+                         <button type="button" onclick="toggleVoiceInput('initialInvestigator')" 
+                            class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg shadow-md transition duration-150 voice-btn" style="height: 40px;">
                             <i class="fas fa-microphone"></i>
                         </button>
                     </div>
@@ -180,25 +187,49 @@
                         <label for="companyName" class="block text-sm font-semibold text-gray-700 mb-1">
                             회사명 <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" id="companyName" name="companyName" required 
-                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                        <div class="input-with-voice space-x-2">
+                            <input type="text" id="companyName" name="companyName" required 
+                                class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                            <button type="button" onclick="toggleVoiceInput('companyName')" 
+                                class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg shadow-md transition duration-150 voice-btn" style="height: 40px;">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label for="siteName" class="block text-sm font-semibold text-gray-700 mb-1">
                             현장명 <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" id="siteName" name="siteName" required 
-                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                        <div class="input-with-voice space-x-2">
+                            <input type="text" id="siteName" name="siteName" required 
+                                class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                            <button type="button" onclick="toggleVoiceInput('siteName')" 
+                                class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg shadow-md transition duration-150 voice-btn" style="height: 40px;">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label for="projectScale" class="block text-sm font-semibold text-gray-700 mb-1">공사규모</label>
-                        <input type="text" id="projectScale" class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                        <div class="input-with-voice space-x-2">
+                            <input type="text" id="projectScale" class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                            <button type="button" onclick="toggleVoiceInput('projectScale')" 
+                                class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg shadow-md transition duration-150 voice-btn" style="height: 40px;">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label for="client" class="block text-sm font-semibold text-gray-700 mb-1">발주자</label>
-                        <input type="text" id="client" class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                        <div class="input-with-voice space-x-2">
+                            <input type="text" id="client" class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                            <button type="button" onclick="toggleVoiceInput('client')" 
+                                class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg shadow-md transition duration-150 voice-btn" style="height: 40px;">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label for="cost" class="block text-sm font-semibold text-gray-700 mb-1">공사금액 (단위: 원)</label>
@@ -215,14 +246,16 @@
                             착공일 (예: 240101 또는 2024.01.01)
                         </label>
                         <input type="text" id="startDate" 
-                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150"
+                            placeholder="2022.01.01">
                     </div>
                     <div>
                         <label for="completionDate" class="block text-sm font-semibold text-gray-700 mb-1">
                             준공일 (예: 251231 또는 2025.12.31)
                         </label>
                         <input type="text" id="completionDate"
-                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150"
+                            placeholder="2022.01.01">
                     </div>
                 </div>
             </div>
@@ -231,11 +264,19 @@
                 <h2 class="text-xl font-bold text-indigo-700 mb-3 border-b-2 border-indigo-200 pb-2">
                     <i class="fas fa-user-edit text-indigo-400 mr-2"></i> 보고기관 및 사진 첨부
                 </h2>
-                <label for="reporter" class="block text-sm font-semibold text-gray-700 mb-1">
-                    보고기관 <span class="text-red-500">*</span>
-                </label>
-                <input type="text" id="reporter" name="reporter" required 
-                    class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                <div>
+                    <label for="reporter" class="block text-sm font-semibold text-gray-700 mb-1">
+                        보고기관 <span class="text-red-500">*</span>
+                    </label>
+                    <div class="input-with-voice space-x-2">
+                        <input type="text" id="reporter" name="reporter" required 
+                            class="block w-full rounded-lg border-gray-300 shadow-sm transition duration-150">
+                        <button type="button" onclick="toggleVoiceInput('reporter')" 
+                            class="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg shadow-md transition duration-150 voice-btn" style="height: 40px;">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                </div>
                 
                 <label for="accidentPhoto" class="block text-sm font-semibold text-gray-700 mb-1 pt-4">
                     <i class="fas fa-camera text-indigo-400 mr-1"></i> 사고 현장 사진 (최대 8개까지 첨부 가능)
@@ -286,45 +327,52 @@
     <script>
         
         const MAX_PHOTOS = 8; 
-        // Web Speech API 관련 변수 선언 (브라우저 호환성 고려)
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
         let activeInputId = null;
 
-        // 음성 인식을 시작/종료하는 토글 함수
+        // 에러 모달 열기 함수
+        function openModal(message) {
+            document.getElementById('error-message').innerText = message;
+            document.getElementById('error-modal').classList.remove('hidden');
+        }
+
+        // 에러 모달 닫기 함수
+        function closeModal() {
+            document.getElementById('error-modal').classList.add('hidden');
+        }
+
+        // 음성 인식을 시작/종료하는 토글 함수 (모든 텍스트 필드 지원)
         function toggleVoiceInput(inputId) {
             const inputElement = document.getElementById(inputId);
             activeInputId = inputId;
 
-            // 1. Web Speech API 지원 여부 확인
+            // 숫자, 드롭다운, 날짜, 파일 입력 타입은 무시
+            if (['accidentDatetime', 'fatalities', 'injuries', 'cost', 'progressRate', 'startDate', 'completionDate', 'accidentPhoto'].includes(inputId)) return;
+
             if (!SpeechRecognition) {
-                openModal('❌ 오류: 이 브라우저는 음성 인식 기능을 지원하지 않습니다. (Chrome, Edge 등에서 사용해 주세요.)');
+                openModal('❌ 오류: 이 브라우저는 음성 인식 기능을 지원하지 않습니다. (Chrome, Edge 등 HTTPS 환경에서 사용해 주세요.)');
                 return;
             }
 
-            // 2. 이미 인식 중인지 확인하고 종료
             if (recognition && recognition.active) {
                 recognition.stop();
-                return; // stop 이벤트 핸들러에서 나머지 처리
+                return;
             }
             
-            // 3. 인식 객체 초기화 및 설정
             recognition = new SpeechRecognition();
-            recognition.lang = 'ko-KR'; // 한국어 설정
-            recognition.interimResults = true; // 중간 결과 표시
+            recognition.lang = 'ko-KR'; 
+            recognition.interimResults = true; 
             recognition.maxAlternatives = 1;
 
-            // 로딩 모달 표시 및 텍스트 변경
             document.getElementById('loading-text').innerText = '말씀하세요... (음성 입력 중)';
             document.getElementById('loading-modal').classList.remove('hidden');
 
-            // 4. 이벤트 핸들러 설정
+            let finalTranscript = '';
             
-            // 음성 인식 결과가 나왔을 때
             recognition.onresult = (event) => {
                 let interimTranscript = '';
-                let finalTranscript = '';
-
+                
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
@@ -333,28 +381,41 @@
                         interimTranscript += transcript;
                     }
                 }
-                // 실시간으로 입력 필드에 중간 텍스트 표시 (선택 사항)
-                inputElement.value += interimTranscript; 
             };
 
-            // 음성 인식이 끝났을 때
             recognition.onend = () => {
                 document.getElementById('loading-modal').classList.add('hidden');
-                // 최종 텍스트만 처리하거나, 중간에 추가된 텍스트를 정리할 수 있음
-                // 여기서는 최종 텍스트를 inputElement.value에 추가
                 
-                // 재시작 (사용자가 말을 멈춰도 계속 듣고 싶을 때)
-                // recognition.start(); 
+                if (finalTranscript.trim().length > 0) {
+                    const cleanedText = cleanText(finalTranscript);
+                    // 'summary' 필드만 내용이 누적되도록 하고, 나머지는 덮어쓰기
+                    if (inputId === 'summary') {
+                        inputElement.value += cleanedText;
+                    } else {
+                        inputElement.value = cleanedText;
+                    }
+                }
             };
             
-            // 오류가 발생했을 때
             recognition.onerror = (event) => {
                 document.getElementById('loading-modal').classList.add('hidden');
                 openModal(`음성 인식 오류: ${event.error}. 마이크 권한을 확인해주세요.`);
             };
 
-            // 5. 인식 시작
             recognition.start();
+        }
+
+        // 간단한 텍스트 후처리 함수 (기존 로직 유지)
+        function cleanText(text) {
+            let cleaned = text.trim().replace(/\s{2,}/g, ' ');
+            cleaned = cleaned.replace(/(\b\w+\b)\s\1/gi, '$1'); 
+            
+            // summary 필드 외에는 마침표를 강제로 붙이지 않음 (이름/기관명 필드 고려)
+            if (activeInputId === 'summary' && !/[.?!]$/.test(cleaned)) {
+                cleaned += '.';
+            }
+            
+            return cleaned;
         }
 
 
@@ -372,7 +433,7 @@
                 }
             }
 
-            // 데이터 수집 및 JS 유효성 검사/포맷팅
+            // 데이터 수집
             const data = collectFormData(); 
             
             if (data) {
@@ -391,18 +452,7 @@
             }
         }
         
-        // 에러 모달 열기 함수
-        function openModal(message) {
-            document.getElementById('error-message').innerText = message;
-            document.getElementById('error-modal').classList.remove('hidden');
-        }
-
-        // 에러 모달 닫기 함수
-        function closeModal() {
-            document.getElementById('error-modal').classList.add('hidden');
-        }
-        
-        // 텍스트 포맷 생성 함수 (기존 로직 유지)
+        // 텍스트 포맷 생성 함수
         function createFormattedText(data) {
             let formattedText = `[사고조사 초동보고서]\n`;
             formattedText += `보고일: ${data.formattedReportDate}\n`;
@@ -435,8 +485,8 @@
             }
             formattedText += `\n`; 
 
-            formattedText += `3. 초동 조치사항 및 보고기관\n`;
-            formattedText += `조치 사항: \n${data.actionTaken}\n`;
+            formattedText += `3. 초동 조사 및 보고\n`;
+            formattedText += `초동 조사 기관: ${data.initialInvestigator}\n`; 
             formattedText += `보고기관: ${data.reporter}\n`; 
             formattedText += `첨부 사진: ${data.photoCount}장\n`; 
             formattedText += `==============================\n`;
@@ -444,13 +494,14 @@
             return formattedText;
         }
 
-        // 폼 데이터 수집 함수 (기존 로직 유지)
+        // 폼 데이터 수집 함수
         function collectFormData() {
             const getVal = (id) => {
                 const el = document.getElementById(id);
                 return el ? el.value.trim() : '';
             };
 
+            // 필드 데이터 수집
             const companyName = getVal('companyName');
             const siteName = getVal('siteName');
             const projectScale = getVal('projectScale');
@@ -464,7 +515,7 @@
             const fatalities = getVal('fatalities') || 0; 
             const injuries = getVal('injuries') || 0;
             const summary = getVal('summary');
-            const actionTaken = getVal('actionTaken');
+            const initialInvestigator = getVal('initialInvestigator');
             const reporter = getVal('reporter');
             
             const accidentPhotoEl = document.getElementById('accidentPhoto');
@@ -524,7 +575,7 @@
                 injuries: parseInt(injuries),
                 totalInjuries: parseInt(fatalities) + parseInt(injuries),
                 summary,
-                actionTaken,
+                initialInvestigator, 
                 reporter,
                 formattedReportDate: formattedReportDate,
                 photoCount: photoCount
